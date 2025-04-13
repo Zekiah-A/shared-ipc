@@ -1,9 +1,8 @@
 {
 	"name": "shared-ipc",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "A simple JavaScript library providing an asynchronous method call interface for Workers, Iframes and cross-window contexts",
 	"main": "dist/index.js",
-	"module": "src/index.js",
 	"type": "module",
 	"directories": {
 		"test": "test"
@@ -21,7 +20,7 @@
 	"files": ["dist", "types"],
 	"exports": {
 		".": {
-			"import": "./src/index.js",
+			"import": "./dist/index.js",
 			"require": "./dist/index.js"
 		}
 	},
