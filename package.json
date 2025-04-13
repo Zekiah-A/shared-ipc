@@ -1,0 +1,52 @@
+{
+	"name": "shared-ipc",
+	"version": "1.0.0",
+	"description": "A simple JavaScript library providing an asynchronous method call interface for Workers, Iframes and cross-window contexts",
+	"main": "dist/index.js",
+	"module": "src/index.js",
+	"type": "module",
+	"directories": {
+		"test": "test"
+	},
+	"scripts": {
+		"build": "rollup -c",
+		"prepublishOnly": "npm run build",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Zekiah-A/shared-ipc.git"
+	},
+	"files": [
+		"dist"
+	],
+	"exports": {
+		".": {
+			"import": "./src/index.js",
+			"require": "./dist/index.js"
+		}
+	},
+	"keywords": [
+		"ipc",
+		"inter-process",
+		"communication",
+		"iframe",
+		"worker",
+		"postMessage"
+	],
+	"author": "Zekiah-A <zekiahamoako@outlook.com>",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/Zekiah-A/shared-ipc/issues"
+	},
+	"homepage": "https://github.com/Zekiah-A/shared-ipc#readme",
+	"dependencies": {
+		"@rollup/plugin-node-resolve": "^16.0.1",
+		"@rollup/plugin-typescript": "^12.1.2",
+		"tslib": "^2.8.1",
+		"typescript": "^5.8.3"
+	},
+	"devDependencies": {
+		"rollup": "^4.40.0"
+	}
+}
