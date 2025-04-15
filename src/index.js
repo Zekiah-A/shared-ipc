@@ -109,7 +109,7 @@ function postIpcMessage(target, msg) {
 
 	// Determine the correct postMessage method
 	if (target && isWindowLike(target)) {
-		// Post to a Window with origin restriction
+		// Post to a Windowr
 		target.postMessage(msg, { targetOrigin: location.origin });
 	}
 	else if (target && typeof target.postMessage === "function") {
@@ -121,7 +121,7 @@ function postIpcMessage(target, msg) {
 		postMessage(msg);
 	}
 	else {
-		throw new Error("Invalid postMessage target: No valid method found");
+		throw new Error("Invalid postIpcMessage target: No valid method found");
 	}
 }
 
@@ -170,7 +170,7 @@ function sendIpcMessage(target, call, data = undefined) {
  * @param {Function} handler 
  */
 function addIpcMessageHandler(name, handler) {
-	ipcHandlers.set(name, handler)
+	ipcHandlers.set(name, handler);
 }
 
 /**
@@ -179,16 +179,18 @@ function addIpcMessageHandler(name, handler) {
 async function handleIpcMessage(data) {
 	/**@type {IpcMessage|null}*/let message = null;
 	/**@type {MessageEventSource|Worker|null}*/let source = null;
-	if (isWindowDefined()) {
-		// Browser will likely send a message event wrapping the IpcMessage
-		if (!(data instanceof MessageEvent) || !data.isTrusted) {
-			throw new Error("Received IPC data was not a valid instance of type MessageEvent");
+
+	if (typeof MessageEvent !== "undefined" && data instanceof MessageEvent) {
+		// MessageEvent<IpcMessage> likely originating from browser postMessage
+		if (!data.isTrusted) {
+			throw new Error("Received IPC data was not a trusted instance of type MessageEvent");
 		}
+
 		message = data.data;
 		source = data.source;
 	}
 	else if (isIpcMessage(data)) {
-		// NodeJS process will likely send a bare IpcMessage
+		// Bare IpcMessage likely originating from NodeJS MessageChannel
 		message = data;
 	}
 	else {
