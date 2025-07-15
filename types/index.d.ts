@@ -12,6 +12,7 @@ interface IpcMessage {
 declare class PublicPromise extends Promise<any> {
 	resolve: (value: any) => void;
 	reject: (reason?: any) => void;
+	deferred: () => PublicPromise
 	constructor(executor: ((resolve: any, reject: any) => void)|null);
 }
 
