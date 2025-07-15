@@ -1,12 +1,44 @@
 // Cross-frame/ worker / parent window IPC system. Contexts that make use of IPC code may not have
 // access to DOM constructs, such as window, and therefore must be handled with care
+class PublicPromise extends Promise {
+	/**@type {(value: any) => void}*/#resolve = () => {
+		throw new Error("PublicPromise resolve called before constructor initialisation")
+	};
+	/**@type {(value: any) => void}*/#reject = (_) => {
+		throw new Error("PublicPromise reject called before constructor initialisation")
+	};
+	
+	/**
+	 * @param {((resolve: any, reject: any) => void)|null} executor
+	 */
+	constructor(executor = null) {
+		super((resolve, reject) => {
+			this.#resolve = resolve;
+			this.#reject = reject;
+			
+			if (executor) {
+				executor(resolve, reject);
+			}
 
-class PublicPromise {
-	constructor() {
-		this.promise = new Promise((resolve, reject) => {
-			this.resolve = resolve
-			this.reject = reject
 		});
+	}
+
+	/**
+	 * @param {any} value 
+	 */
+	resolve(value) {
+		this.#resolve(value);
+	}
+
+	/**
+	 * @param {any} reason 
+	 */
+	reject(reason) {
+		this.#reject(reason);
+	}
+	
+	static deferred() {
+		return new PublicPromise();
 	}
 }
 
@@ -132,7 +164,7 @@ function postIpcMessage(target, msg) {
  */
 async function makeIpcRequest(target, call, data = undefined) {
 	const handle = ipcReqId++;
-	const promise = new PublicPromise();
+	const promise = PublicPromise.deferred();
 
 	const postCall = { call, data, handle, source: getWindowNameSafe(), error: undefined };
 	ipcReqs.set(handle, promise);
@@ -144,7 +176,7 @@ async function makeIpcRequest(target, call, data = undefined) {
 
 	postIpcMessage(postTarget, postCall);
 
-	return await promise.promise;
+	return await promise;
 }
 
 /**
