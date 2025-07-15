@@ -64,7 +64,7 @@ class PublicPromise extends Promise {
  */
 
 /**
- * @typedef {Window|HTMLIFrameElement|Worker|MessagePort|WindowProxy|MessagePort|ServiceWorker} IpcTarget
+ * @typedef {Window|HTMLIFrameElement|Worker|MessagePort|ServiceWorker} IpcTarget
  */
 
 /**
@@ -77,7 +77,6 @@ class PublicPromise extends Promise {
  * @property {any} data
  * @property {number|undefined} handle
  * @property {string} source
- * @property {string|undefined} error
  */
 
 /**@type {number}*/let ipcReqId = 0;
@@ -142,7 +141,7 @@ function isIpcMessage(obj) {
 		return false;
 	}
 
-	const expectedProps = ["call", "data", "handle", "source", "error"];
+	const expectedProps = ["call", "data", "handle", "source"];
 	const actualProps = Object.keys(obj);
 
 	for (const prop of expectedProps) {
@@ -180,14 +179,8 @@ function isValidIpcMessage(obj) {
 		}
 	}
 
-	if (typeof obj.source !== "string" || obj.source.length === 0) {
+	if (typeof obj.source !== "string") {
 		return false;
-	}
-
-	if (obj.error !== undefined) {
-		if (typeof obj.error !== "string" || obj.error.length === 0) {
-			return false;
-		}
 	}
 
 	return true;
@@ -350,7 +343,7 @@ function sendIpcMessage(target, call, data = undefined) {
 		throw new Error("Invalid postMessage target");
 	}
 
-	const msg = { call, data, handle: undefined, source: getWindowNameSafe(), error: undefined };
+	const msg = { call, data, handle: undefined, source: getWindowNameSafe() };
 	postIpcMessage(postTarget, msg);
 }
 

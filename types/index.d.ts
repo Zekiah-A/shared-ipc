@@ -1,5 +1,5 @@
-// cross-ipc.d.ts
-type IpcTarget = Window | HTMLIFrameElement | Worker | MessagePort;
+// shared-ipc.d.ts
+type IpcTarget = Window|HTMLIFrameElement|Worker|MessagePort|ServiceWorker;
 
 interface IpcMessage {
 	call: string;
@@ -9,42 +9,11 @@ interface IpcMessage {
 	error?: string;
 }
 
-declare class PublicPromise<T = any> {
-	promise: Promise<T>;
-	resolve: (value: T | PromiseLike<T>) => void;
+declare class PublicPromise extends Promise<any> {
+	resolve: (value: any) => void;
 	reject: (reason?: any) => void;
-	constructor();
+	constructor(executor: ((resolve: any, reject: any) => void)|null);
 }
-
-/**
- * Resolves a post target to either Window or Worker
- */
-declare function resolvePostTarget(target: IpcTarget): Window | Worker;
-
-/**
- * Safely gets the window name or falls back to "worker"
- */
-declare function getWindowNameSafe(): string;
-
-/**
- * Checks if the window object is defined
- */
-declare function isWindowDefined(): boolean;
-
-/**
- * Validates if an object resembles a browser window
- */
-declare function isWindowLike(target: any): target is Window;
-
-/**
- * Validates if an object matches the IpcMessage structure
- */
-declare function isIpcMessage(obj: any): obj is IpcMessage;
-
-/**
- * Safely posts an IPC message to a target
- */
-declare function postIpcMessage(target: IpcTarget, msg: IpcMessage): void;
 
 /**
  * Makes an IPC request and returns a promise for the response
