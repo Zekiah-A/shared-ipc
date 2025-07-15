@@ -27,7 +27,7 @@ else {
 		console.log("(Worker thread) Received a notification of type", type, "from main thread:", message);
 
 		makeIpcRequest(parentPort, "generateGreeting", "World").then(result => {
-			console.log("(Worker thread) Received greeting result from main thread:", result);
+			console.log("(Worker thread) Received greeting from main thread:", result);
 		})
 		.catch(e => {
 			console.error("Error making IPC request to main thread", e);
