@@ -110,6 +110,7 @@ function getWindowNameSafe() {
 }
 
 /**
+ * Checks if the current context has access to the window object
  * @returns {boolean}
  */
 function isWindowDefined() {
@@ -129,6 +130,16 @@ function isWindowLike(target) {
 		isWindowDefined() &&
 		target instanceof Window
 	);
+}
+
+/**
+ * Checks if the current environment is node-like
+ * @returns {boolean}
+ */
+function isNode() {
+	return (typeof process !== "undefined" &&
+		!!process.versions &&
+		!!process.versions.node);
 }
 
 /**
@@ -244,7 +255,9 @@ function isValidIpcResult(obj) {
 }
 
 /**
- * @param {IpcSource|null} target 
+ * @param {IpcSource|null} target - Source may still be null, even if we need to send back a response,
+ * for example, web workers do not include the source if the source was a Window
+ *  since they do not have access to DOM 
  * @param {IpcResult} response
  */
 async function postIpcResponse(target=null, response) {
@@ -254,27 +267,31 @@ async function postIpcResponse(target=null, response) {
 	}
 
 	if (target) {
+		// Easy route, we have a defined source, so send it back to them
 		target.postMessage(response);
 	}
 	else {
-		try {
-			// Post to a worker, messageport or similar
-			const { parentPort } = await import("worker_threads");
-			if (parentPort) {
-				parentPort.postMessage(response);
+		if (isNode()) {
+			try {
+				// Likely Node Worker context, posts to a Worker, MessagePort or similar interfaces
+				const { parentPort } = await import("worker_threads");
+				if (parentPort) {
+					parentPort.postMessage(response);
+				}
+				else {
+					throw new Error("Invalid postIpcResponse target: No valid method found")
+				}
+				return;
 			}
-			else {
-				throw new Error("Invalid postIpcResponse target: No valid method found")
-			}
+			catch { /* Ignore */ }
 		}
-		catch {
-			// Not in Node.js worker context, try global postMessage
-			if (typeof postMessage === "function") {
-				postMessage(response);
-			}
-			else {
-				throw new Error("Invalid postIpcResponse target: No valid method found")
-			}
+
+		// Maybe not in Node.js worker context, probably Web Worker, try global postMessage
+		if (typeof postMessage === "function") {
+			postMessage(response);
+		}
+		else {
+			throw new Error("Invalid postIpcResponse target: No valid method found")
 		}
 	}
 }
@@ -394,7 +411,6 @@ async function handleIpcMessage(data, source = null) {
 	if (!message) {
 		throw new Error("Received IPC message was null or undefined");
 	}
-
 	if (isIpcMessage(message)) {
 		/** @type {any} */let result = undefined;
 		try {
@@ -405,11 +421,25 @@ async function handleIpcMessage(data, source = null) {
 				const reqHandler = /** @type {Function} */(ipcHandlers.get(callName));
 				result = await reqHandler(message.data);
 			}
-			// Fallback to global window
-			else if (isWindowDefined()) {
-				/**@type {{ [key: string]: Function }}*/const context = /**@type {any}*/(window);
-				if (typeof context[callName] === "function") {
-					result = await context[callName](message.data);
+			// Fallback to global context
+			else {
+				// TODO: Put behind a feature flag in case users do not want this functionality.
+				/**@type {{ [key: string]: Function }}*/let globalContext;
+				if (isWindowDefined()) {
+					globalContext = /**@type {any}*/(window);
+				}
+				else if (typeof globalThis !== "undefined") {
+					globalContext = /**@type {any}*/(globalThis);
+				}
+				else if (typeof self !== "undefined") {
+					globalContext = /**@type {any}*/(self);
+				}
+				else {
+					throw new Error("Could not access global context to call IPC method");
+				}
+
+				if (typeof globalContext[callName] === "function") {
+					result = await globalContext[callName](message.data);
 				}
 			}
 
@@ -421,10 +451,6 @@ async function handleIpcMessage(data, source = null) {
 					source: getWindowNameSafe(),
 					error: undefined
 				};
-
-				if (!source) {
-					throw new Error("Received IPC result source was null or undefined");
-				}
 
 				await postIpcResponse(source, resultMessage);
 			}
@@ -438,10 +464,6 @@ async function handleIpcMessage(data, source = null) {
 					source: getWindowNameSafe(),
 					data: undefined
 				};
-
-				if (!source) {
-					throw new Error("Received IPC result source was null or undefined");
-				}
 
 				await postIpcResponse(source, errorMessage);
 			}
