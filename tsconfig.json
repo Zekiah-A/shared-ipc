@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
-		"target": "es2016",
+		"target": "es2020",
+		"module": "es2020",
 		"allowJs": true,
 		"checkJs": true,
 		"declaration": true,

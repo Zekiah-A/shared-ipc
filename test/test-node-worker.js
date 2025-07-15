@@ -3,7 +3,7 @@ import {
 	sendIpcMessage,
 	addIpcMessageHandler,
 	handleIpcMessage
-} from "shared-ipc";
+} from "../src/index.js";
 import { Worker, isMainThread, parentPort } from "worker_threads";
 
 if (isMainThread) {
@@ -14,17 +14,23 @@ if (isMainThread) {
 	});
 
 	const worker = new Worker(fileName);
-	worker.addListener("message", handleIpcMessage);
-	sendIpcMessage(worker, "notification", { type: "alert", message: "Something happened!" });
+	worker.addListener("message", (data) => handleIpcMessage(data, worker));
+	worker.addListener("online", () => {
+		sendIpcMessage(worker, "ready");
+		sendIpcMessage(worker, "notification", { type: "alert", message: "Something happened!" });
+	});
 }
 else {
-	addIpcMessageHandler("notification", ({ type, message }) => {
-		console.log("Received notification from main thread:", type, message);
-	});	
 	parentPort.addListener("message", handleIpcMessage);
+	addIpcMessageHandler("notification", ({ type, message }) => {
+		console.log("(Worker thread) Received notification from main thread:", type, message);
 
-	makeIpcRequest(parentPort, "generateGreeting", "World").then(result => {
-		console.log("Received greeting result from main thread", result);
+		makeIpcRequest(parentPort, "generateGreeting", "World").then(result => {
+			console.log("Received greeting result from main thread", result);
+		})
+		.catch(e => {
+			console.error("Error making IPC request to main thread", e);
+		});
 	});
 }
 
