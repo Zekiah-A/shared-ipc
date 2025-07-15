@@ -318,7 +318,7 @@ async function makeIpcRequest(target, call, data = undefined) {
 	const handle = ipcReqId++;
 	const promise = PublicPromise.deferred();
 
-	const postCall = { call, data, handle, source: getWindowNameSafe(), error: undefined };
+	const postCall = { call, data, handle, source: getWindowNameSafe() };
 	ipcReqs.set(handle, promise);
 
 	const postTarget = resolvePostTarget(target);
